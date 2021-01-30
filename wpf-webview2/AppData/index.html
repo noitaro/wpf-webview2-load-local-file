@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://cdn.jsdelivr.net/npm/blockly@1.0.0/blockly_compressed.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/blockly@1.0.0/blocks_compressed.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/blockly@1.0.0/javascript_compressed.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/blockly@1.0.0/msg/js/ja.min.js"></script>
+    <title>Blockly Sample</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            background-color: #fff;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-weight: normal;
+            font-size: 140%;
+        }
+
+        table {
+            height: 100%;
+            width: 100%;
+        }
+
+        #blocklyArea {
+            height: 99%;
+            background: #fc9;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <table>
+        <tr>
+            <td id="blocklyArea">
+                Blockly will be positioned here.
+            </td>
+        </tr>
+    </table>
+    <div id="blocklyDiv" style="position: absolute"></div>
+    <xml id="toolbox" style="display: none">
+        <block type="controls_if"></block>
+        <block type="controls_repeat_ext"></block>
+        <block type="logic_compare"></block>
+        <block type="math_number"></block>
+        <block type="math_arithmetic"></block>
+        <block type="text"></block>
+        <block type="text_print"></block>
+    </xml>
+    <script>
+        const blocklyArea = document.getElementById('blocklyArea');
+        const blocklyDiv = document.getElementById('blocklyDiv');
+        const workspace = Blockly.inject(blocklyDiv, { toolbox: document.getElementById('toolbox') });
+        const onresize = function (e) {
+            let element = blocklyArea;
+            let x = 0;
+            let y = 0;
+            do {
+                x += element.offsetLeft;
+                y += element.offsetTop;
+                element = element.offsetParent;
+            } while (element);
+            // Position blocklyDiv over blocklyArea.
+            blocklyDiv.style.left = x + 'px';
+            blocklyDiv.style.top = y + 'px';
+            blocklyDiv.style.width = blocklyArea.offsetWidth + 'px';
+            blocklyDiv.style.height = blocklyArea.offsetHeight + 'px';
+            Blockly.svgResize(workspace);
+        };
+        window.addEventListener('resize', onresize, false);
+        onresize();
+        Blockly.svgResize(workspace);
+
+        /** ワークスペースのブロックを変更したらソースコードを更新します。 */
+        workspace.addChangeListener(event => {
+            Blockly.JavaScript.STATEMENT_PREFIX = null;
+            const code = Blockly.JavaScript.workspaceToCode(workspace);
+            console.log(code);
+            window.chrome.webview.postMessage(code);
+        });
+
+        function runCode() {
+            // Generate JavaScript code and run it.
+            window.LoopTrap = 1000;
+            Blockly.JavaScript.INFINITE_LOOP_TRAP =
+                'if (--window.LoopTrap == 0) throw "Infinite loop.";\n';
+            const code = Blockly.JavaScript.workspaceToCode(workspace);
+            Blockly.JavaScript.INFINITE_LOOP_TRAP = null;
+            try {
+                eval(code);
+            } catch (e) {
+                alert(e);
+            }
+        }
+    </script>
+</body>
+
+</html>
